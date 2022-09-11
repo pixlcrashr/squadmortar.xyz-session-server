@@ -1,0 +1,134 @@
+## Authentication
+#
+# Auth is done by requesting a temporary token which lasts a month. This means that a client can be uniquely identified at max a month.
+#
+# A token can be requested by executing the GraphQL mutation
+#
+# ```
+# mutation {
+#   authenticate
+# }
+# ```
+#
+# The field returns a string which represents a JWT.
+#
+# Now, this token is only used to establish a websocket connection with a unique client id.
+#
+# To authenticate against the websocket, add query parameter named token `?token=<JWT>` to the websocket URI.
+#
+# For all other user specific mutations, an authorization header has to be added:
+#
+# ```
+# Authorization: Bearer <JWT>
+# ```
+#
+
+scalar JsonWebToken
+scalar Guid
+
+type User {
+  clientGuid: Guid!
+  name: String!
+}
+
+input Vector3Input {
+  x: Float!
+  y: Float!
+  z: Float!
+}
+
+type Vector3 {
+  x: Float!
+  y: Float!
+  z: Float!
+}
+
+enum WeaponType {
+  StandardMortar
+  TechnicalMortar
+  Rockets
+  HellCanon
+}
+
+type Weapon {
+  id: Int!
+  type: WeaponType!
+  position: Vector3!
+  active: Boolean!
+  owner: User
+  isOwned: Boolean!
+}
+
+input WeaponInput {
+  id: Int!
+  position: Vector3Input
+  active: Boolean
+}
+
+type Target {
+  id: Int!
+  position: Vector3!
+  active: Boolean!
+  owner: User
+  isOwned: Boolean!
+}
+
+input TargetInput {
+  id: Int!
+  position: Vector3Input
+  active: Boolean
+}
+
+type Session {
+  guid: Guid!
+  users: [User!]!
+  weapons: [Weapon!]!
+  targets: [Target!]!
+}
+
+type SessionUpdate {
+    userLeft: User
+    userJoined: User
+    userChanged: User
+
+    targetAdded: Target
+    targetChanged: Target
+    targetRemoved: Target
+
+    weaponAdded: Weapon
+    weaponChanged: Weapon
+    weaponRemoved: Weapon
+}
+
+type Subscription {
+  sessionUpdates(sessionGuid: Guid!): SessionUpdate!
+}
+
+type Query {
+  users(sessionGuid: Guid!): [User!]!
+  targets(sessionGuid: Guid!): [Target!]!
+  weapons(sessionGuid: Guid!): [Weapon!]!
+}
+
+type Mutation {
+  authenticate: JsonWebToken!
+
+  changeUserName(sessionGuid: Guid!, name: String!): User!
+
+  createSession: Session!
+
+  joinSession(sessionGuid: Guid!): User!
+  quitSession(sessionGuid: Guid!): Guid!
+
+  addWeapon(sessionGuid: Guid!, weaponType: WeaponType!): Weapon!
+  addTarget(sessionGuid: Guid!): Target!
+
+  target(sessionGuid: Guid!, input: TargetInput!): Target!
+  weapon(sessionGuid: Guid!, input: WeaponInput!): Weapon!
+
+  acquireTarget(sessionGuid: Guid!, id: Int!): Target!
+  releaseTarget(sessionGuid: Guid!, id: Int!): Target!
+
+  acquireWeapon(sessionGuid: Guid!, id: Int!): Weapon!
+  releaseWeapon(sessionGuid: Guid!, id: Int!): Weapon!
+}
