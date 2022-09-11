@@ -12,8 +12,6 @@
 #
 # The field returns a string which represents a JWT.
 #
-# Now, this token is only used to establish a websocket connection with a unique client id.
-#
 # To authenticate against the websocket, add query parameter named token `?token=<JWT>` to the websocket URI.
 #
 # For all other user specific mutations, an authorization header has to be added:
